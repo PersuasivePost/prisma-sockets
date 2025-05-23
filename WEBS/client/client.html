@@ -1,0 +1,37 @@
+<!-- Save as client.html and open in your browser -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Minimal Chat Client</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h2>Minimal Chat Client</h2>
+    <div id="messages"></div>
+    <input id="msg" autocomplete="off" placeholder="Type a message..." />
+    <button onclick="sendMsg()">Send</button>
+    <script>
+      const socket = io("http://localhost:3002");
+
+      socket.on("connect", () => {
+        addMsg("Connected as " + socket.id);
+      });
+
+      socket.on("user-joined", (data) => addMsg(data.message));
+      socket.on("user-left", (data) => addMsg(data.message));
+      socket.on("message", (msg) => addMsg("Message: " + msg));
+
+      function sendMsg() {
+        const input = document.getElementById("msg");
+        socket.emit("newMessage", input.value);
+        input.value = "";
+      }
+
+      function addMsg(msg) {
+        const div = document.getElementById("messages");
+        div.innerHTML += `<div>${msg}</div>`;
+      }
+    </script>
+  </body>
+</html>
