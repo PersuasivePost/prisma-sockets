@@ -12,20 +12,39 @@
     <input id="msg" autocomplete="off" placeholder="Type a message..." />
     <button onclick="sendMsg()">Send</button>
     <script>
+      let myClientId = null;
       const socket = io("http://localhost:3002");
 
       socket.on("connect", () => {
-        addMsg("Connected as " + socket.id);
+        myClientId = socket.id;
+        addMsg("You have joined the chat");
       });
 
-      socket.on("user-joined", (data) => addMsg(data.message));
-      socket.on("user-left", (data) => addMsg(data.message));
-      socket.on("message", (msg) => addMsg("Message: " + msg));
+      // Listen for new users joining
+      socket.on("user-joined", (data) => {
+        addMsg(data.message);
+      });
+
+      // Listen for new messages with sender info
+      socket.on("reply", (data) => {
+        // data should be { clientId, message }
+        if (typeof data === "object" && data.clientId && data.message) {
+          addMsg(
+            `<b>${data.clientId === myClientId ? "You" : data.clientId}:</b> ${
+              data.message
+            }`
+          );
+        } else {
+          addMsg(data); // fallback for plain string
+        }
+      });
 
       function sendMsg() {
         const input = document.getElementById("msg");
-        socket.emit("newMessage", input.value);
-        input.value = "";
+        if (input.value.trim() !== "") {
+          socket.emit("newMessage", input.value);
+          input.value = "";
+        }
       }
 
       function addMsg(msg) {

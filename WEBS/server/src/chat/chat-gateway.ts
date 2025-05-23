@@ -5,6 +5,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  ConnectedSocket, // <-- added
 } from '@nestjs/websockets';
 
 import { Server, Socket } from 'socket.io';
@@ -16,7 +17,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket) {
     console.log('new user connected', client.id);
 
-    this.server.emit('user-joined', {
+    client.broadcast.emit('user-joined', {
       message: `new user joined the chat: ${client.id}`,
     });
   }
@@ -39,8 +40,13 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
   //   }
 
   @SubscribeMessage('newMessage')
-  handleNewMessage(@MessageBody() message: string) {
-    this.server.emit('message', message); // broadcast to all clients
+  handleNewMessage(
+    @MessageBody() message: string,
+    @ConnectedSocket() client: Socket, // <-- added
+  ) {
+    // this.server.emit('message', message); // broadcast to all clients
+
+    this.server.emit('reply', { clientId: client.id, message }); // broadcast to all clients
   }
 }
 
